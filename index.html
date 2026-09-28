@@ -3,19 +3,318 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>歡迎來到我的靜態網頁</title>
-  <link rel="stylesheet" href="style.css">
+  <title>我的待辦清單 To-Do List</title>
+  <style>
+    /* ===== 基礎 ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1rem;
+      color: #333;
+    }
+
+    .app {
+      background: #fff;
+      border-radius: 16px;
+      padding: 1.5rem 1.5rem 2rem;
+      width: 100%;
+      max-width: 560px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+      margin-top: 2rem;
+    }
+
+    h1 {
+      font-size: 2rem;          /* 適合投影 */
+      color: #4a3f8a;
+      text-align: center;
+      margin-bottom: 0.75rem;
+    }
+
+    /* ===== 統計列 ===== */
+    .stats {
+      background: #f3f0ff;
+      border-radius: 10px;
+      padding: 0.6rem 1rem;
+      text-align: center;
+      font-size: 1.3rem;        /* 適合投影 */
+      font-weight: 600;
+      color: #4a3f8a;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ===== 輸入區 ===== */
+    .add-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    #task-input {
+      flex: 1;
+      padding: 0.85rem 1rem;
+      font-size: 1.15rem;       /* 適合投影 */
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    #task-input:focus { border-color: #667eea; }
+
+    #add-btn {
+      padding: 0.85rem 1.4rem;
+      font-size: 1.15rem;
+      background: #667eea;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    #add-btn:hover { background: #5549d6; }
+
+    /* ===== 清單 ===== */
+    #todo-list { list-style: none; }
+
+    #todo-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0.5rem;
+      border-bottom: 1px solid #eee;
+      font-size: 1.2rem;        /* 適合投影 */
+      word-break: break-word;
+    }
+
+    #todo-list li:last-child { border-bottom: none; }
+
+    /* 勾選框 */
+    #todo-list li input[type="checkbox"] {
+      width: 1.4rem;
+      height: 1.4rem;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    /* 事項文字 */
+    .task-text {
+      flex: 1;
+      line-height: 1.4;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+
+    /* 完成狀態：刪除線 */
+    .task-text.done {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    /* 刪除單一項目按鈕 */
+    .del-btn {
+      background: none;
+      border: none;
+      color: #e74c3c;
+      font-size: 1.3rem;
+      cursor: pointer;
+      padding: 0.3rem 0.5rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .del-btn:hover { color: #c0392b; }
+
+    /* ===== 一鍵清除已完成 ===== */
+    .clear-done {
+      margin-top: 1.25rem;
+      width: 100%;
+      padding: 0.7rem;
+      font-size: 1.1rem;
+      background: #fff;
+      color: #e74c3c;
+      border: 2px solid #e74c3c;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .clear-done:hover { background: #e74c3c; color: #fff; }
+
+    /* ===== 空狀態 ===== */
+    .empty {
+      text-align: center;
+      color: #aaa;
+      font-size: 1.1rem;
+      padding: 1.5rem 0;
+    }
+
+    /* ===== 手機 ===== */
+    @media (max-width: 480px) {
+      h1 { font-size: 1.6rem; }
+      .stats { font-size: 1.1rem; }
+      #task-input, #add-btn { font-size: 1rem; }
+      #todo-list li { font-size: 1.05rem; }
+    }
+  </style>
 </head>
 <body>
-  <main class="container">
-    <h1 id="title">歡迎來到我的靜態網頁 👋</h1>
-    <p id="greeting">這是一個用純 HTML／CSS／JavaScript 建立的簡單網頁。</p>
-    <button id="btn" type="button">按我</button>
-    <p id="output"></p>
-    <footer>
-      <small>Openclaw0921 &middot; GitHub Pages</small>
-    </footer>
-  </main>
-  <script src="script.js"></script>
+  <div class="app">
+    <h1>📋 待辦清單</h1>
+
+    <!-- 統計列：未完成 X／總數 Y -->
+    <div class="stats" id="stats">未完成 0／總數 0</div>
+
+    <!-- 輸入與新增 -->
+    <div class="add-row">
+      <input id="task-input" type="text" placeholder="輸入待辦事項…" autocomplete="off">
+      <button id="add-btn" type="button">新增</button>
+    </div>
+
+    <!-- 待辦清單 -->
+    <ul id="todo-list"></ul>
+
+    <!-- 一鍵清除已完成 -->
+    <button class="clear-done" id="clear-done" type="button">🗑️ 清除已完成</button>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // ---- 資料與 localStorage ----
+      const STORAGE_KEY = 'todoList_v1';
+      // 每筆：{ id: 數字, text: 字串, done: 布林 }
+      let todos = load();
+
+      // 從 localStorage 讀取
+      function load() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          const data = raw ? JSON.parse(raw) : [];
+          return Array.isArray(data) ? data : [];
+        } catch (e) {
+          return [];
+        }
+      }
+
+      // 寫入 localStorage
+      function save() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+      }
+
+      // ---- DOM 參考 ----
+      const input = document.getElementById('task-input');
+      const addBtn = document.getElementById('add-btn');
+      const listEl = document.getElementById('todo-list');
+      const statsEl = document.getElementById('stats');
+      const clearBtn = document.getElementById('clear-done');
+
+      // ---- 統計：未完成 X／總數 Y ----
+      function updateStats() {
+        const total = todos.length;
+        const undone = todos.filter(function (t) { return !t.done; }).length;
+        statsEl.textContent = '未完成 ' + undone + '／總數 ' + total;
+      }
+
+      // ---- 渲染清單 ----
+      function render() {
+        listEl.innerHTML = '';
+
+        if (todos.length === 0) {
+          const li = document.createElement('li');
+          li.className = 'empty';
+          li.textContent = '暫無待辦事項 ✨';
+          listEl.appendChild(li);
+        } else {
+          todos.forEach(function (todo) {
+            const li = document.createElement('li');
+
+            // 勾選框
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = todo.done;
+            cb.addEventListener('change', function () {
+              todo.done = cb.checked;
+              textEl.classList.toggle('done', todo.done);
+              save();
+              updateStats();
+            });
+
+            // 事項文字（點擊也可切換完成）
+            const textEl = document.createElement('span');
+            textEl.className = 'task-text' + (todo.done ? ' done' : '');
+            textEl.textContent = todo.text;
+            textEl.addEventListener('click', function () {
+              todo.done = !todo.done;
+              cb.checked = todo.done;
+              textEl.classList.toggle('done', todo.done);
+              save();
+              updateStats();
+            });
+
+            // 刪除單一項目
+            const delBtn = document.createElement('button');
+            delBtn.className = 'del-btn';
+            delBtn.textContent = '✕';
+            delBtn.title = '刪除此項目';
+            delBtn.addEventListener('click', function () {
+              todos = todos.filter(function (t) { return t.id !== todo.id; });
+              save();
+              render();
+              updateStats();
+            });
+
+            li.appendChild(cb);
+            li.appendChild(textEl);
+            li.appendChild(delBtn);
+            listEl.appendChild(li);
+          });
+        }
+
+        updateStats();
+      }
+
+      // ---- 新增待辦 ----
+      function addTodo() {
+        const text = input.value.trim();
+        if (!text) { input.focus(); return; }
+        todos.push({ id: Date.now(), text: text, done: false });
+        input.value = '';
+        save();
+        render();
+        input.focus();
+      }
+
+      // ---- 一鍵清除已完成 ----
+      function clearDone() {
+        const hadDone = todos.some(function (t) { return t.done; });
+        todos = todos.filter(function (t) { return !t.done; });
+        save();
+        render();
+        updateStats();
+        return hadDone; // 供測試判斷
+      }
+
+      // ---- 事件綁定 ----
+      addBtn.addEventListener('click', addTodo);
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { addTodo(); }
+      });
+      clearBtn.addEventListener('click', function () {
+        clearDone();
+        render();
+      });
+
+      // ---- 初始渲染 ----
+      render();
+    })();
+  </script>
 </body>
 </html>
